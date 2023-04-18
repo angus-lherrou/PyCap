@@ -3,6 +3,7 @@
 """Low-level HTTP functionality"""
 
 from collections import namedtuple
+import weakref
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -31,6 +32,17 @@ __copyright__ = "2014, Vanderbilt University"
 RedcapError = RequestException
 
 _session = Session()
+_r = weakref.WeakMethod(_session.close)
+
+
+def _finalize_session():
+    closer = _r()
+    if closer is not None:
+        closer()
+    # else _session was already garbage-collected
+
+
+weakref.finalize(_session, _finalize_session)
 
 
 class FileUpload(TypedDict):
